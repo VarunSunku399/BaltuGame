@@ -6,7 +6,8 @@ const { Pool } = require('pg');
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  ssl: false // local install — no SSL needed
+  // Railway Postgres requires SSL; local Postgres does not
+  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
 });
 
 // ── Auto-create tables if they don't exist ────────────────────────────────────

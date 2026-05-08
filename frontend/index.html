@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>BaltuGame — AI-Powered Dino Runner</title>
+  <meta name="description" content="An AI-driven educational Dino Runner game. Upload a PDF and answer AI-generated questions to control your fate!" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;900&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- ── Particle Background ────────────────────────────── -->
+  <canvas id="bg-canvas" aria-hidden="true"></canvas>
+
+  <!-- ── App Shell ──────────────────────────────────────── -->
+  <div id="app">
+
+    <!-- SCREEN: Landing / Upload -->
+    <div id="screen-upload" class="screen active">
+      <div class="hero-badge">AI-Powered</div>
+      <h1 class="hero-title">Baltu<span class="accent">Game</span></h1>
+      <p class="hero-sub">Upload any PDF. Our AI reads it, builds quiz questions,<br>and turns them into live Dino Runner gameplay events.</p>
+
+      <div class="upload-card" id="drop-zone">
+        <div class="upload-icon" aria-hidden="true">
+          <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M32 44V20M22 30l10-10 10 10" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M16 48h32" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <p class="upload-label">Drop your PDF here or <label for="pdf-input" class="link-label">browse</label></p>
+        <p class="upload-hint">Max 20 MB · Any subject</p>
+        <input type="file" id="pdf-input" accept="application/pdf" hidden />
+        <div id="file-name-display" class="file-name hidden"></div>
+      </div>
+
+      <button id="btn-start" class="btn-primary" disabled>
+        <span class="btn-icon">🦖</span> Launch Game
+      </button>
+
+      <div id="upload-status" class="status-bar hidden"></div>
+
+      <div class="how-it-works">
+        <div class="step"><span>1</span><p>Upload PDF</p></div>
+        <div class="step-arrow">→</div>
+        <div class="step"><span>2</span><p>AI Generates Questions</p></div>
+        <div class="step-arrow">→</div>
+        <div class="step"><span>3</span><p>Run &amp; Answer to Survive</p></div>
+      </div>
+    </div>
+
+    <!-- SCREEN: Game -->
+    <div id="screen-game" class="screen">
+      <div class="game-hud">
+        <div class="hud-left">
+          <span class="hud-label">SCORE</span>
+          <span id="hud-score" class="hud-value">0</span>
+        </div>
+        <div class="hud-center" id="hud-status">RUNNING…</div>
+        <div class="hud-right">
+          <span class="hud-label">NEXT Q IN</span>
+          <span id="hud-countdown" class="hud-value">10s</span>
+        </div>
+      </div>
+
+      <!-- Main game canvas -->
+      <canvas id="game-canvas"></canvas>
+
+      <!-- Pause / back -->
+      <button id="btn-back" class="btn-back" title="Back to upload">← Exit</button>
+    </div>
+
+    <!-- SCREEN: Question (full-screen pause) -->
+    <div id="screen-question" class="screen">
+      <div class="question-card">
+        <div class="qcard-header">
+          <span class="q-badge">⚡ AI CHALLENGE</span>
+          <p class="qcard-subtitle">Answer correctly to keep running — wrong answer ends the game!</p>
+        </div>
+
+        <div class="q-timer-bar">
+          <div id="q-timer-fill" class="q-timer-fill"></div>
+        </div>
+        <p class="q-timer-label"><span id="q-seconds">15</span>s remaining</p>
+
+        <p id="q-text" class="q-text"></p>
+        <div id="q-choices" class="q-choices"></div>
+      </div>
+    </div>
+
+    <!-- SCREEN: Game Over -->
+    <div id="screen-gameover" class="screen">
+      <div class="gameover-card">
+        <div class="gameover-dino" aria-hidden="true">🦖</div>
+        <h2 id="gameover-title" class="gameover-title">GAME OVER</h2>
+        <p id="gameover-reason" class="gameover-reason"></p>
+
+        <div class="gameover-stats">
+          <div class="stat-item">
+            <span class="stat-label">Score</span>
+            <span id="go-score" class="stat-val">0</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-label">Correct</span>
+            <span id="go-correct" class="stat-val">0</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-label">Wrong</span>
+            <span id="go-wrong" class="stat-val">0</span>
+          </div>
+        </div>
+
+        <!-- Name input -->
+        <div class="name-entry" id="name-entry">
+          <label class="name-label" for="player-name-input">Save score to leaderboard:</label>
+          <div class="name-row">
+            <input type="text" id="player-name-input" class="name-input" placeholder="Your name…" maxlength="20" />
+            <button id="btn-save-score" class="btn-save">💾 Save</button>
+          </div>
+          <p id="save-status" class="save-status"></p>
+        </div>
+
+        <!-- Leaderboard -->
+        <div class="leaderboard">
+          <h3 class="lb-title">🏆 Top 10</h3>
+          <div id="lb-rows" class="lb-rows">
+            <p class="lb-loading">Loading…</p>
+          </div>
+        </div>
+
+        <div class="gameover-btns">
+          <button id="btn-retry" class="btn-primary">🔄 Play Again</button>
+          <button id="btn-new-pdf" class="btn-secondary">📄 New PDF</button>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /#app -->
+
+  <script type="module" src="src/main.js"></script>
+</body>
+</html>
